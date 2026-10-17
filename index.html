@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#10110f" />
+    <title>5V5 Mania — The Gauntlet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="5V5 Mania home">
+          <span class="brand-mark">5<span>V</span>5</span>
+          <span class="brand-divider"></span>
+          <span class="brand-name">MANIA<span> / THE GAUNTLET</span></span>
+        </a>
+        <div class="topbar-right">
+          <span class="live-indicator"><span></span> MATCH HQ</span>
+          <button class="reset-button" id="reset-button" type="button">Reset match</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span> FRIENDS. RIVALS. ALL 19 GAMES.</div>
+          <h1>THE <span>GAUNTLET</span></h1>
+          <p>Pick your five. Play it all. Settle it here.</p>
+        </section>
+
+        <section class="scoreboard" aria-label="Match scoreboard">
+          <div class="team-score team-score-bonzo">
+            <div class="score-team-heading">
+              <span class="team-kicker">TEAM A <span class="team-dot"></span></span>
+              <span class="score-captain">CAPTAIN</span>
+            </div>
+            <div class="score-team-name">BONZO</div>
+            <div class="score-team-footer">
+              <span class="team-size" id="bonzo-count">1 / 5 PLAYERS</span>
+              <span class="team-wins" id="bonzo-wins">00</span>
+            </div>
+          </div>
+
+          <div class="score-center">
+            <span class="score-label">MATCH SCORE</span>
+            <div class="score-numbers">
+              <span id="bonzo-score">0</span>
+              <span class="score-colon">:</span>
+              <span id="caboose-score">0</span>
+            </div>
+            <div class="match-progress">
+              <div class="progress-track"><span id="progress-fill"></span></div>
+              <span id="progress-label">0 / 19 ROUNDS PLAYED</span>
+            </div>
+          </div>
+
+          <div class="team-score team-score-caboose">
+            <div class="score-team-heading">
+              <span class="team-kicker">TEAM B <span class="team-dot"></span></span>
+              <span class="score-captain">CAPTAIN</span>
+            </div>
+            <div class="score-team-name">CABOOSEMA</div>
+            <div class="score-team-footer">
+              <span class="team-size" id="caboose-count">1 / 5 PLAYERS</span>
+              <span class="team-wins" id="caboose-wins">00</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="teams-section" aria-labelledby="teams-title">
+          <div class="section-heading">
+            <div>
+              <div class="section-overline">01 <span></span> THE ROSTERS</div>
+              <h2 id="teams-title">BUILD YOUR <em>FIVE</em></h2>
+            </div>
+            <p>Assign each athlete to a captain. Four picks each.</p>
+          </div>
+
+          <div class="roster-grid">
+            <article class="roster-card roster-bonzo">
+              <div class="roster-heading">
+                <div>
+                  <span class="roster-label">TEAM A</span>
+                  <h3>Bonzo <span class="captain-tag">C</span></h3>
+                </div>
+                <span class="roster-fraction" id="bonzo-fraction">1 <i>/ 5</i></span>
+              </div>
+              <div class="captain-row"><span class="captain-avatar">B</span><span>Bonzo</span><span class="captain-pill">CAPTAIN</span></div>
+              <div class="roster-slots" id="bonzo-roster" aria-label="Bonzo's team roster"></div>
+            </article>
+
+            <article class="roster-card roster-caboose">
+              <div class="roster-heading">
+                <div>
+                  <span class="roster-label">TEAM B</span>
+                  <h3>CabooseMa <span class="captain-tag">C</span></h3>
+                </div>
+                <span class="roster-fraction" id="caboose-fraction">1 <i>/ 5</i></span>
+              </div>
+              <div class="captain-row"><span class="captain-avatar">C</span><span>CabooseMa</span><span class="captain-pill">CAPTAIN</span></div>
+              <div class="roster-slots" id="caboose-roster" aria-label="CabooseMa's team roster"></div>
+            </article>
+          </div>
+
+          <div class="athletes-panel">
+            <div class="athletes-heading">
+              <div>
+                <span class="roster-label">THE DRAFT POOL</span>
+                <h3>Pick your athletes</h3>
+              </div>
+              <span class="available-count" id="available-count">8 AVAILABLE</span>
+            </div>
+            <div class="athlete-list" id="athlete-list"></div>
+          </div>
+        </section>
+
+        <section class="games-section" aria-labelledby="games-title">
+          <div class="section-heading games-heading">
+            <div>
+              <div class="section-overline">02 <span></span> THE LINEUP</div>
+              <h2 id="games-title">19 GAMES. <em>ONE WINNER.</em></h2>
+            </div>
+            <p>Tap a team to award the round. Tap again to clear it.</p>
+          </div>
+          <div class="games-summary">
+            <span><i class="summary-dot"></i> ALL ROUNDS</span>
+            <span id="games-summary-count">0 OF 19 DECIDED</span>
+          </div>
+          <div class="game-list" id="game-list"></div>
+        </section>
+
+        <footer class="footer">
+          <span>5V5 MANIA <i>·</i> MAY THE BEST TEAM WIN</span>
+          <span class="save-status" id="save-status" role="status">AUTO-SAVES IN THIS BROWSER</span>
+        </footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
