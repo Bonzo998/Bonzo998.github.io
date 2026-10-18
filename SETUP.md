@@ -8,9 +8,9 @@ Create a project at [supabase.com](https://supabase.com). In **Project Settings 
 
 ```js
 export const config = {
-  supabaseUrl: "https://YOUR_PROJECT_REF.supabase.co",
-  supabaseAnonKey: "YOUR_PUBLIC_ANON_KEY",
-  adminUserId: "",
+  supabaseUrl: "https://txivmaaelaelnkrqxvaq.supabase.co",
+  supabaseAnonKey: "sb_publishable_YnBtIoSPd5tDnvAit5-GEg_VDCJSaii",
+  adminUserId: "bonzo998",
 };
 ```
 

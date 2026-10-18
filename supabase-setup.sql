@@ -23,8 +23,8 @@ create policy "Only the owner can update the gauntlet"
   on public.gauntlet_state
   for update
   to authenticated
-  using (auth.uid() = 'YOUR_SUPABASE_USER_UUID'::uuid)
-  with check (auth.uid() = 'YOUR_SUPABASE_USER_UUID'::uuid);
+  using (auth.uid() = 'Ov23libcoik4PrtUIauw'::uuid)
+  with check (auth.uid() = 'Ov23libcoik4PrtUIauw'::uuid);
 
 insert into public.gauntlet_state (id, state)
 values (
