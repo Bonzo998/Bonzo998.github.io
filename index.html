@@ -22,8 +22,13 @@
           <span class="brand-name">MANIA<span> / THE GAUNTLET</span></span>
         </a>
         <div class="topbar-right">
-          <span class="live-indicator"><span></span> MATCH HQ</span>
-          <button class="reset-button" id="reset-button" type="button">Reset match</button>
+          <span class="live-indicator"><span></span><span id="connection-status">CONNECTING</span></span>
+          <div class="auth-controls">
+            <span id="access-label" class="access-label">VIEW ONLY</span>
+            <button class="auth-button" id="login-button" type="button" hidden>Sign in with GitHub</button>
+            <button class="auth-button" id="logout-button" type="button" hidden>Sign out</button>
+            <button class="reset-button" id="reset-button" type="button" hidden>Reset match</button>
+          </div>
         </div>
       </header>
 
@@ -79,7 +84,10 @@
               <div class="section-overline">01 <span></span> THE ROSTERS</div>
               <h2 id="teams-title">BUILD YOUR <em>FIVE</em></h2>
             </div>
-            <p>Assign each athlete to a captain. Four picks each.</p>
+            <div class="section-heading-actions">
+              <p id="roster-instructions">Teams are managed by the match admin.</p>
+              <button class="pool-toggle" id="toggle-draft-pool" type="button" hidden>Hide draft pool</button>
+            </div>
           </div>
 
           <div class="roster-grid">
@@ -108,7 +116,7 @@
             </article>
           </div>
 
-          <div class="athletes-panel">
+          <div class="athletes-panel" id="athletes-panel">
             <div class="athletes-heading">
               <div>
                 <span class="roster-label">THE DRAFT POOL</span>
@@ -126,7 +134,7 @@
               <div class="section-overline">02 <span></span> THE LINEUP</div>
               <h2 id="games-title">19 GAMES. <em>ONE WINNER.</em></h2>
             </div>
-            <p>Tap a team to award the round. Tap again to clear it.</p>
+            <p id="game-instructions">Round results are managed by the match admin.</p>
           </div>
           <div class="games-summary">
             <span><i class="summary-dot"></i> ALL ROUNDS</span>
@@ -137,11 +145,11 @@
 
         <footer class="footer">
           <span>5V5 MANIA <i>·</i> MAY THE BEST TEAM WIN</span>
-          <span class="save-status" id="save-status" role="status">AUTO-SAVES IN THIS BROWSER</span>
+          <span class="save-status" id="save-status" role="status">CONNECTING TO MATCH</span>
         </footer>
       </main>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
