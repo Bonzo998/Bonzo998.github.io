@@ -164,7 +164,9 @@ button { font: inherit; }
 .game-overall { min-width: 90px; color: #72786d; font-size: 8px; font-weight: 800; letter-spacing: .6px; text-align: right; }
 .game-overall.winner-bonzo { color: var(--lime); }
 .game-overall.winner-caboose { color: var(--purple); }
+.game-overall.tied { color: #f0c86a; }
 .game-card-content { padding: 12px 13px; }
+.game-card.draw { border-color: #766742; }
 .winner-actions { display: flex; align-items: center; gap: 6px; }
 .winner-action-label { margin-right: 4px; color: #81877b; font-size: 8px; font-weight: 800; letter-spacing: .7px; }
 .winner-button { min-width: 74px; min-height: 29px; padding: 0 9px; border: 1px solid #393d35; border-radius: 3px; background: #1d201b; color: #a0a697; font-size: 8px; font-weight: 800; cursor: pointer; transition: .16s ease; }
@@ -223,6 +225,12 @@ button { font: inherit; }
 .one-four-setup { display: grid; grid-template-columns: minmax(140px, 1fr) 34px minmax(240px, 2fr); align-items: center; gap: 9px; }
 .solo-side, .four-side { display: grid; gap: 7px; }
 .four-side .match-player-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.manhunt-rounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.manhunt-time, .manhunt-time-readonly { display: grid; gap: 6px; margin-top: 10px; color: #92988c; font-size: 8px; font-weight: 800; letter-spacing: .6px; }
+.manhunt-time input { max-width: 180px; }
+.manhunt-time-readonly strong { color: #dce0d5; font-size: 10px; letter-spacing: 0; }
+.manhunt-result { margin: 10px 0 0; color: #aeb4a6; font-size: 10px; font-weight: 700; text-align: center; }
+.game-card.draw .manhunt-result { color: #f0c86a; }
 .team-select { max-width: 210px; }
 .submatch-actions .winner-button { min-width: 90px; }
 
@@ -256,6 +264,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--lime); outline-
   .game-card-heading { flex-wrap: wrap; gap: 8px; }
   .game-overall { min-width: 75px; margin-left: auto; }
   .submatch-list { grid-template-columns: 1fr; }
+  .manhunt-rounds { grid-template-columns: 1fr; }
   .king-setup { grid-template-columns: 1fr; }
   .king-queue { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .king-fight { grid-template-columns: 48px minmax(55px, 1fr) 18px minmax(55px, 1fr) auto; gap: 4px; padding: 6px; }

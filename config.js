@@ -3,5 +3,5 @@
 export const config = {
   supabaseUrl: "https://txivmaaelaelnkrqxvaq.supabase.co",
   supabaseAnonKey: "sb_publishable_YnBtIoSPd5tDnvAit5-GEg_VDCJSaii",
-  adminUserId: "bonzo998",
+  adminUserId: "32111822-9144-41ee-a7a5-a4681f3338e8",
 };

@@ -8,9 +8,9 @@ Create a project at [supabase.com](https://supabase.com). In **Project Settings 
 
 ```js
 export const config = {
-  supabaseUrl: "https://txivmaaelaelnkrqxvaq.supabase.co",
-  supabaseAnonKey: "sb_publishable_YnBtIoSPd5tDnvAit5-GEg_VDCJSaii",
-  adminUserId: "bonzo998",
+  supabaseUrl: "https://YOUR_PROJECT_REF.supabase.co",
+  supabaseAnonKey: "YOUR_PUBLIC_ANON_OR_PUBLISHABLE_KEY",
+  adminUserId: "YOUR_SUPABASE_AUTH_USER_UUID",
 };
 ```
 
@@ -27,7 +27,7 @@ The URL and anon/publishable key are intended for browser use. **Never use the `
 
 Sign in to the site once with the GitHub account that should own editing. In Supabase, open **Authentication → Users**, find that GitHub user, and copy its Supabase user UUID.
 
-In `supabase-setup.sql`, replace both occurrences of `YOUR_SUPABASE_USER_UUID` with that UUID. Run the complete SQL file in the Supabase **SQL Editor**. The script creates the shared match row, enables real-time updates, permits public reads, and permits updates only from that UUID.
+Set `adminUserId` in `config.js` to that UUID. Make sure the UUID in the `Only the owner can update the gauntlet` policy in `supabase-setup.sql` is the same. Run the complete SQL file in the Supabase **SQL Editor**. The script creates the shared match row and its game-format data, enables real-time updates, permits public reads, and permits updates only from that UUID.
 
 Put the same UUID in `adminUserId` in `config.js`:
 
@@ -48,7 +48,7 @@ Subsequent pushes to `main` automatically publish website changes. Match picks a
 
 ## Game formats
 
-The lineup shows each game as its own card. The 5v5 games use the drafted teams directly. 2XKO and Mahjong let the admin choose the players for two 2v2 sets and one 1v1; each set has its own result and the overall game is awarded to the first team to win two sets. Minecraft Manhunt lets the admin select one player against four opponents. For Honour and Chess let the admin set both team queues, choose the starting king's team, and record each fight until one team runs out of players.
+The lineup shows each game as its own card. The 5v5 games use the drafted teams directly. 2XKO and Mahjong let the admin choose the players for two 2v2 sets and one 1v1; each set has its own result and the overall game is awarded to the first team to win two sets. Minecraft Manhunt has two rounds: each captain selects a solo player against four opponents, then enters that solo player's survival time in seconds. The higher survival time wins the combined Manhunt game; equal times draw. For Honour and Chess let the admin set both team queues, choose the starting king's team, and record each fight until one team runs out of players.
 
 After both teams have four drafted athletes (five players including each captain), the draft pool can be hidden with the toggle above it. If a drafted player is moved or removed, special-game lineups and results are cleared so no match keeps stale player selections.
 
@@ -56,5 +56,6 @@ After both teams have four drafted athletes (five players including each captain
 
 - The `Reset match` button is only shown to the configured administrator.
 - If the page shows **SETUP REQUIRED**, check that `config.js` contains the Supabase URL and public anon/publishable key.
+- If it shows `Could not find the table 'public.gauntlet_state' in the schema cache`, run `supabase-setup.sql` in the Supabase SQL Editor, wait briefly for the API schema cache to refresh, and reload the site.
 - If it shows a connection or sync error, confirm the SQL setup, GitHub provider callback, allowed redirect URL, and Supabase project status.
 - Keep `supabase-setup.sql`'s update policy restricted to your own UUID. Never add a public update policy.

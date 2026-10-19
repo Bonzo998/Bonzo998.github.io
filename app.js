@@ -26,7 +26,7 @@ const games = [
   { name: "2XKO", format: "2V2 · 2V2 · 1V1", kind: "sets" },
   { name: "For Honour", format: "KING OF THE HILL", kind: "king" },
   { name: "Paladins", format: "5V5" },
-  { name: "Minecraft Manhunt", format: "1V4", kind: "one-vs-four" },
+  { name: "Minecraft Manhunt", format: "1V4 · EACH TEAM SOLO ONCE", kind: "one-vs-four" },
   { name: "Rocket League", format: "5V5" },
   { name: "Stick fight the game", format: "5V5" },
   { name: "TF2", format: "5V5" },
@@ -36,6 +36,8 @@ const games = [
   { name: "MECCHA CHAMELEON", format: "5V5" },
   { name: "PvZ GW2", format: "5V5" },
   { name: "Roblox - Phantom Forces", format: "5V5" },
+  { name: "Brawlhalla", format: "5V5" },
+  { name: "osu", format: "5V5" },
 ];
 
 const specialGameIndices = [6, 7, 9, 14, 15];
@@ -44,10 +46,14 @@ function createMatchData() {
   return {
     6: { rounds: createSetRounds() },
     7: createKingData(),
-    9: { soloTeam: "bonzo", soloPlayer: "", opponents: Array(4).fill(null), winners: [] },
+    9: { rounds: [createManhuntRound("bonzo"), createManhuntRound("caboose")] },
     14: { rounds: createSetRounds() },
     15: createKingData(),
   };
+}
+
+function createManhuntRound(soloTeam) {
+  return { soloTeam, soloPlayer: "", opponents: Array(4).fill(null), durationSeconds: null };
 }
 
 function createSetRounds() {
@@ -103,20 +109,25 @@ function normalizeState(value) {
   }
   const bonzo = value.teams.bonzo;
   const caboose = value.teams.caboose;
-  if (!Array.isArray(bonzo) || !Array.isArray(caboose) || value.winners.length !== games.length) {
+  if (
+    !Array.isArray(bonzo) ||
+    !Array.isArray(caboose) ||
+    (value.winners.length < games.length - 2 || value.winners.length > games.length)
+  ) {
     return null;
   }
+  const winners = [...value.winners, ...Array(games.length - value.winners.length).fill(null)];
   const assigned = [...bonzo, ...caboose];
   const valid =
     bonzo.length <= 4 &&
     caboose.length <= 4 &&
     assigned.every((name) => athletes.includes(name)) &&
     new Set(assigned).size === assigned.length &&
-    value.winners.every((winner) => winner === null || winner === "bonzo" || winner === "caboose");
+    winners.every((winner) => winner === null || winner === "bonzo" || winner === "caboose");
   if (!valid) return null;
   const normalized = {
     teams: { bonzo: [...bonzo], caboose: [...caboose] },
-    winners: [...value.winners],
+    winners,
     matchData: normalizeMatchData(value.matchData),
   };
   if (!isValidMatchData(normalized.matchData, normalized.teams)) return null;
@@ -152,8 +163,26 @@ function normalizeMatchData(matchData) {
     }
   }
   const manhunt = normalized[9];
-  if (manhunt && Array.isArray(manhunt.opponents)) {
-    manhunt.opponents = normalizeSlots(manhunt.opponents, 4);
+  if (Array.isArray(manhunt?.rounds)) {
+    manhunt.rounds = ["bonzo", "caboose"].map((team, index) => {
+      const round = manhunt.rounds[index] ?? createManhuntRound(team);
+      return {
+        ...round,
+        soloTeam: team,
+        soloPlayer: round.soloPlayer ?? "",
+        opponents: normalizeSlots(round.opponents ?? [], 4),
+        durationSeconds: round.durationSeconds ?? null,
+      };
+    });
+  } else if (manhunt && Array.isArray(manhunt.opponents)) {
+    const firstRound = {
+      ...createManhuntRound("bonzo"),
+      soloPlayer: manhunt.soloPlayer ?? "",
+      opponents: normalizeSlots(manhunt.opponents, 4),
+    };
+    normalized[9] = {
+      rounds: [firstRound, createManhuntRound("caboose")],
+    };
   }
   return normalized;
 }
@@ -212,17 +241,25 @@ function isValidMatchData(matchData, teams = state.teams) {
       );
     }
     return (
-      (data.soloTeam === null || captains[data.soloTeam]) &&
-      typeof data.soloPlayer === "string" &&
-      (!data.soloPlayer || isTeamPlayer(data.soloPlayer, data.soloTeam, teams)) &&
-      Array.isArray(data.opponents) &&
-      data.opponents.length === 4 &&
-      new Set(data.opponents.filter(Boolean)).size === data.opponents.filter(Boolean).length &&
-      data.opponents.every((name) => name === null || isTeamPlayer(name, data.soloTeam === "bonzo" ? "caboose" : "bonzo", teams)) &&
-      Array.isArray(data.winners) &&
-      (!data.winners.length || (data.soloPlayer && data.opponents.every(Boolean))) &&
-      data.winners.length <= 1 &&
-      data.winners.every((winner) => winner === "bonzo" || winner === "caboose")
+      Array.isArray(data.rounds) &&
+      data.rounds.length === 2 &&
+      data.rounds.every((round, roundIndex) => {
+        const soloTeam = roundIndex === 0 ? "bonzo" : "caboose";
+        const opponentTeam = soloTeam === "bonzo" ? "caboose" : "bonzo";
+        return (
+          round.soloTeam === soloTeam &&
+          typeof round.soloPlayer === "string" &&
+          (!round.soloPlayer || isTeamPlayer(round.soloPlayer, soloTeam, teams)) &&
+          Array.isArray(round.opponents) &&
+          round.opponents.length === 4 &&
+          new Set(round.opponents.filter(Boolean)).size === round.opponents.filter(Boolean).length &&
+          round.opponents.every((name) => name === null || isTeamPlayer(name, opponentTeam, teams)) &&
+          (round.durationSeconds === null ||
+            (Number.isInteger(round.durationSeconds) && round.durationSeconds >= 0)) &&
+          (round.durationSeconds === null ||
+            (round.soloPlayer && round.opponents.every(Boolean)))
+        );
+      })
     );
   });
 }
@@ -253,11 +290,26 @@ function getGameWinner(index) {
     return simulateKingMatch(data).winner;
   }
   if (kind === "one-vs-four") {
-    return data.winners.length ? data.winners[0] : null;
+    const [bonzoSolo, cabooseSolo] = data.rounds;
+    if (bonzoSolo.durationSeconds === null || cabooseSolo.durationSeconds === null) return null;
+    if (bonzoSolo.durationSeconds === cabooseSolo.durationSeconds) return null;
+    return bonzoSolo.durationSeconds > cabooseSolo.durationSeconds ? "bonzo" : "caboose";
   }
   return state.winners[index];
 }
 
+function isGameDecided(index) {
+  if (games[index].kind === "one-vs-four") {
+    return state.matchData[index].rounds.every((round) => round.durationSeconds !== null);
+  }
+  return getGameWinner(index) !== null;
+}
+
+function isGameTied(index) {
+  if (games[index].kind !== "one-vs-four" || !isGameDecided(index)) return false;
+  const [bonzoSolo, cabooseSolo] = state.matchData[index].rounds;
+  return bonzoSolo.durationSeconds === cabooseSolo.durationSeconds;
+}
 function simulateKingMatch(data) {
   if (!data.kingTeam || !data.kingPlayer || !data.queues[data.kingTeam].includes(data.kingPlayer)) {
     return { fights: [], winner: null };
@@ -289,10 +341,13 @@ function simulateKingMatch(data) {
     if (!fightWinner) break;
     pointers[challengerTeam] += 1;
     if (fightWinner === challengerTeam) {
-      pointers[kingTeam] += 1;
       kingTeam = challengerTeam;
       kingPlayer = challenger;
     }
+  }
+  if (!winner) {
+    const nextTeam = kingTeam === "bonzo" ? "caboose" : "bonzo";
+    if (!data.queues[nextTeam][pointers[nextTeam]]) winner = kingTeam;
   }
   return { fights, winner };
 }
@@ -368,13 +423,15 @@ function renderGames() {
   elements.gameList.innerHTML = games
     .map((game, index) => {
       const winner = getGameWinner(index);
-      const winnerClass = winner ? ` decided decided-${winner}` : "";
+      const decided = isGameDecided(index);
+      const tied = isGameTied(index);
+      const winnerClass = `${decided ? " decided" : ""}${winner ? ` decided-${winner}` : ""}${tied ? " draw" : ""}`;
       const result = game.kind === "sets"
         ? renderSetMatch(index, isAdmin && remoteReady)
         : game.kind === "king"
           ? renderKingMatch(index, isAdmin && remoteReady)
           : game.kind === "one-vs-four"
-            ? renderOneVsFour(index, isAdmin && remoteReady)
+            ? renderManhunt(index, isAdmin && remoteReady)
             : renderStandardResult(index, winner, isAdmin && remoteReady);
       return `<article class="game-card${winnerClass}">
         <header class="game-card-heading">
@@ -384,7 +441,7 @@ function renderGames() {
             ${game.note ? `<span class="game-note">${game.note}</span>` : ""}
           </span>
           <span class="game-format">${game.format}</span>
-          <span class="game-overall${winner ? ` winner-${winner}` : ""}">${winner ? `${captains[winner].name} WON` : "PENDING"}</span>
+          <span class="game-overall${winner ? ` winner-${winner}` : ""}${tied ? " tied" : ""}">${tied ? "TIED ON TIME" : winner ? `${captains[winner].name} WON` : "PENDING"}</span>
         </header>
         <div class="game-card-content">${result}</div>
       </article>`;
@@ -517,41 +574,62 @@ function renderFightWinner(gameIndex, fightIndex, winner, editable) {
   </div>`;
 }
 
-function renderOneVsFour(index, editable) {
+function renderManhunt(index, editable) {
   const data = state.matchData[index];
-  const soloTeam = data.soloTeam ?? "bonzo";
-  const opponentTeam = soloTeam === "bonzo" ? "caboose" : "bonzo";
-  const sideSelector = editable
-    ? `<label class="match-field"><span>SOLO PLAYER'S TEAM</span>
-        <select class="player-select team-select" data-match-action="solo-team" data-game="${index}"${isSaving ? " disabled" : ""}>
-          <option value="bonzo"${soloTeam === "bonzo" ? " selected" : ""}>Bonzo</option>
-          <option value="caboose"${soloTeam === "caboose" ? " selected" : ""}>CabooseMa</option>
-        </select>
-      </label>`
-    : `<span class="match-team-name">${captains[soloTeam].name} · SOLO</span>`;
-  const soloPlayer = editable
-    ? renderPlayerSelect(soloTeam, data.soloPlayer, "solo-player", index, -1, 0)
-    : `<span class="selected-player">${data.soloPlayer || "Solo player TBD"}</span>`;
-  const opposingPlayers = Array.from({ length: 4 }, (_, slotIndex) => {
-    const selected = data.opponents[slotIndex] ?? "";
-    return editable
-      ? renderPlayerSelect(
-          opponentTeam,
-          selected,
-          "opponent-player",
-          index,
-          -1,
-          slotIndex,
-          data.opponents.filter((player) => player !== selected),
-        )
-      : `<span class="selected-player">${selected || "Player TBD"}</span>`;
+  const rounds = data.rounds.map((round, roundIndex) => {
+    const soloTeam = round.soloTeam;
+    const opponentTeam = soloTeam === "bonzo" ? "caboose" : "bonzo";
+    const soloPlayer = editable
+      ? renderPlayerSelect(soloTeam, round.soloPlayer, "manhunt-solo-player", index, roundIndex, 0)
+      : `<span class="selected-player">${round.soloPlayer || "Solo player TBD"}</span>`;
+    const opposingPlayers = Array.from({ length: 4 }, (_, slotIndex) => {
+      const selected = round.opponents[slotIndex] ?? "";
+      return editable
+        ? renderPlayerSelect(
+            opponentTeam,
+            selected,
+            "manhunt-opponent-player",
+            index,
+            roundIndex,
+            slotIndex,
+            round.opponents.filter((player) => player !== selected),
+          )
+        : `<span class="selected-player">${selected || "Player TBD"}</span>`;
+    }).join("");
+    const timeInput = editable
+      ? `<label class="manhunt-time"><span>SOLO SURVIVED (SECONDS)</span>
+          <input class="player-select" type="number" min="0" step="1" inputmode="numeric"
+            data-match-action="manhunt-time" data-game="${index}" data-round="${roundIndex}"
+            value="${round.durationSeconds ?? ""}" placeholder="Enter time" aria-label="${captains[soloTeam].name} solo survival time"
+            ${isSaving ? "disabled" : ""}>
+        </label>`
+      : `<div class="manhunt-time-readonly"><span>SOLO SURVIVED</span><strong>${round.durationSeconds === null ? "TIME TBD" : `${round.durationSeconds} sec`}</strong></div>`;
+    return `<section class="submatch manhunt-round">
+      <div class="submatch-heading">
+        <span>ROUND ${roundIndex + 1} · ${captains[soloTeam].name} SOLO</span>
+        <span>1V4</span>
+      </div>
+      <div class="one-four-setup">
+        <div class="solo-side">
+          <span class="match-team-name match-${soloTeam}">${captains[soloTeam].name} · SOLO</span>
+          <div class="match-player-list">${soloPlayer}</div>
+        </div>
+        <span class="match-vs">VS</span>
+        <div class="four-side">
+          <span class="match-team-name match-${opponentTeam}">${captains[opponentTeam].name} · FOUR</span>
+          <div class="match-player-list">${opposingPlayers}</div>
+        </div>
+      </div>
+      ${timeInput}
+    </section>`;
   }).join("");
-  return `<div class="one-four-setup">
-    <div class="solo-side">${sideSelector}<div class="match-player-list">${soloPlayer}</div></div>
-    <span class="match-vs">VS</span>
-    <div class="four-side"><span class="match-team-name">${captains[opponentTeam].name} · FOUR</span><div class="match-player-list">${opposingPlayers}</div></div>
-  </div>
-  ${renderSubmatchWinner(index, 0, data.winners[0] ?? null, editable)}`;
+  const [bonzoRound, cabooseRound] = data.rounds;
+  const score = bonzoRound.durationSeconds === null || cabooseRound.durationSeconds === null
+    ? "Set both solo survival times to determine the Manhunt winner."
+    : bonzoRound.durationSeconds === cabooseRound.durationSeconds
+      ? `Tied at ${bonzoRound.durationSeconds} seconds.`
+      : `${captains[getGameWinner(index)].name} wins by ${Math.abs(bonzoRound.durationSeconds - cabooseRound.durationSeconds)} seconds.`;
+  return `<div class="manhunt-rounds">${rounds}</div><p class="manhunt-result">${score}</p>`;
 }
 
 function handleMatchControl(control) {
@@ -579,19 +657,34 @@ function handleMatchControl(control) {
     data.queues[team] = queue;
     if (data.kingTeam) data.kingPlayer = data.queues[data.kingTeam][0] ?? "";
     data.winners = [];
-  } else if (control.dataset.matchAction === "solo-team") {
-    data.soloTeam = value;
-    data.soloPlayer = "";
-    data.opponents = [];
-    data.winners = [];
-  } else if (control.dataset.matchAction === "solo-player") {
-    data.soloPlayer = value;
-    data.winners = [];
-  } else if (control.dataset.matchAction === "opponent-player") {
-    const opponents = [...data.opponents];
+  } else if (control.dataset.matchAction === "manhunt-solo-player") {
+    const round = data.rounds[Number(control.dataset.round)];
+    round.soloPlayer = value;
+    round.durationSeconds = null;
+  } else if (control.dataset.matchAction === "manhunt-opponent-player") {
+    const round = data.rounds[Number(control.dataset.round)];
+    const opponents = [...round.opponents];
     opponents[slot] = value || null;
-    data.opponents = opponents;
-    data.winners = [];
+    round.opponents = opponents;
+    round.durationSeconds = null;
+  } else if (control.dataset.matchAction === "manhunt-time") {
+    const round = data.rounds[Number(control.dataset.round)];
+    if (value === "") {
+      round.durationSeconds = null;
+    } else {
+      const seconds = Number(value);
+      if (!Number.isSafeInteger(seconds) || seconds < 0) {
+        showToast("Enter a whole number of seconds, zero or greater.");
+        renderGames();
+        return;
+      }
+      if (!round.soloPlayer || round.opponents.filter(Boolean).length !== 4) {
+        showToast("Select the solo player and all four opponents before entering a time.");
+        renderGames();
+        return;
+      }
+      round.durationSeconds = seconds;
+    }
   }
 
   persistMatchData(matchData);
@@ -622,15 +715,6 @@ function handleWinnerButton(button) {
     if (matchData[gameIndex].winners[fightIndex] !== winner) winners[fightIndex] = winner;
     matchData[gameIndex].winners = winners;
     persistMatchData(matchData);
-  } else if (games[gameIndex].kind === "one-vs-four") {
-    const matchData = structuredClone(state.matchData);
-    const data = matchData[gameIndex];
-    if (!data.soloPlayer || data.opponents.filter(Boolean).length !== 4) {
-      showToast("Select the solo player and all four opponents first.");
-      return;
-    }
-    data.winners = data.winners[0] === winner ? [] : [winner];
-    persistMatchData(matchData);
   } else {
     setWinner(gameIndex, winner);
   }
@@ -644,7 +728,7 @@ function renderScore() {
   const winners = games.map((_, index) => getGameWinner(index));
   const bonzoWins = winners.filter((winner) => winner === "bonzo").length;
   const cabooseWins = winners.filter((winner) => winner === "caboose").length;
-  const played = bonzoWins + cabooseWins;
+  const played = games.filter((_, index) => isGameDecided(index)).length;
   document.querySelector("#bonzo-score").textContent = bonzoWins;
   document.querySelector("#caboose-score").textContent = cabooseWins;
   document.querySelector("#bonzo-wins").textContent = String(bonzoWins).padStart(2, "0");
@@ -664,9 +748,11 @@ function renderAccess() {
       ? "VIEW ONLY"
       : "VIEW ONLY";
   elements.accessLabel.classList.toggle("admin", isAdmin);
-  document.querySelector("#roster-instructions").textContent = isAdmin
+  const rosterInstructions = document.querySelector("#roster-instructions");
+  rosterInstructions.textContent = isAdmin
     ? "Assign, move, or remove athletes. Four picks per team."
-    : "Team rosters are visible to everyone. Editing is admin-only.";
+    : "";
+  rosterInstructions.hidden = !isAdmin;
   document.querySelector("#game-instructions").textContent = isAdmin
     ? "Set each game's lineup and record match results."
     : "Lineups and results update live. Only the admin can change them.";
